@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Env
+.env
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Uploads (runtime data, not source)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# OS
+.DS_Store

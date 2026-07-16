@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-ink: #14182A;
+  --color-ink2: #1B2036;
+  --color-panel: #1C2238;
+  --color-panel-line: #2C3352;
+  --color-text: #FFFFFF;
+}
+
+html.light {
+  --color-ink: #F3F1E9;
+  --color-ink2: #FFFFFF;
+  --color-panel: #FFFFFF;
+  --color-panel-line: #E4DFD0;
+  --color-text: #221D0F;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--color-text) !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
