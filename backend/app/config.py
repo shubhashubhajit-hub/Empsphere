@@ -28,6 +28,8 @@ class Settings:
     SIGNUP_SECRET_ADMIN: str = os.getenv("SIGNUP_SECRET_ADMIN", "")
     SIGNUP_SECRET_MANAGER: str = os.getenv("SIGNUP_SECRET_MANAGER", "")
     SIGNUP_SECRET_EMPLOYEE: str = os.getenv("SIGNUP_SECRET_EMPLOYEE", "")
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+    RESEND_FROM: str = os.getenv("RESEND_FROM", "")
 
 settings = Settings()
 
