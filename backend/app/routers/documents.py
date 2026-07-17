@@ -19,6 +19,19 @@ from app.services.notification_service import create_notification
 from app.services.activity_service import log_activity
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
+def _can_modify_document(current_user: models.User, doc: models.Document, db: Session) -> bool:
+    """Admins can always modify; the original uploader can always modify their
+    own file; a Manager can modify a file if the person who uploaded it is in
+    the Manager's own department."""
+    if current_user.role == models.RoleEnum.admin:
+        return True
+    if doc.uploaded_by == current_user.id:
+        return True
+    if current_user.role == models.RoleEnum.manager:
+        uploader = db.query(models.User).filter(models.User.id == doc.uploaded_by).first()
+        if uploader and uploader.department and uploader.department == current_user.department:
+            return True
+    return False
 
 
 @router.get("/categories", response_model=List[schemas.CategoryOut])
@@ -238,8 +251,8 @@ async def replace_document_file(
     doc = db.query(models.Document).filter(models.Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    if current_user.role != models.RoleEnum.admin and doc.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only replace your own documents")
+    if not _can_modify_document(current_user, doc, db):
+        raise HTTPException(status_code=403, detail="You can only replace documents you uploaded, or your department's documents")
 
     file_type = detect_file_type(file.filename)
     if file_type == "unknown":
@@ -313,8 +326,8 @@ def update_document(
     doc = db.query(models.Document).filter(models.Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    if current_user.role != models.RoleEnum.admin and doc.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only edit your own documents")
+    if not _can_modify_document(current_user, doc, db):
+        raise HTTPException(status_code=403, detail="You can only edit documents you uploaded, or your department's documents")
 
     if payload.title is not None:
         doc.title = payload.title
@@ -335,8 +348,8 @@ def delete_document(doc_id: str, db: Session = Depends(get_db), current_user: mo
     doc = db.query(models.Document).filter(models.Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    if current_user.role != models.RoleEnum.admin and doc.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only delete your own documents")
+    if not _can_modify_document(current_user, doc, db):
+        raise HTTPException(status_code=403, detail="You can only delete documents you uploaded, or your department's documents")
 
     if os.path.exists(doc.file_path):
         os.remove(doc.file_path)
