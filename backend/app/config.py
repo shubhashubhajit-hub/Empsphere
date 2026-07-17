@@ -30,6 +30,7 @@ class Settings:
     SIGNUP_SECRET_EMPLOYEE: str = os.getenv("SIGNUP_SECRET_EMPLOYEE", "")
     RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
     RESEND_FROM: str = os.getenv("RESEND_FROM", "")
+    EMAIL_REDIRECT_TO: str = os.getenv("EMAIL_REDIRECT_TO", "")
 
 settings = Settings()
 

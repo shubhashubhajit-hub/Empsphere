@@ -31,21 +31,27 @@ def _send_via_resend(to_email: str, subject: str, body: str) -> bool:
 
 
 def send_email(to_email: str, subject: str, body: str):
+    actual_to = to_email
+    actual_subject = subject
+    if settings.EMAIL_REDIRECT_TO:
+        actual_to = settings.EMAIL_REDIRECT_TO
+        actual_subject = f"[for {to_email}] {subject}"
+
     if settings.RESEND_API_KEY:
-        if _send_via_resend(to_email, subject, body):
+        if _send_via_resend(actual_to, actual_subject, body):
             return True
 
     if settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASS:
         try:
             msg = MIMEText(body)
-            msg["Subject"] = subject
+            msg["Subject"] = actual_subject
             msg["From"] = settings.SMTP_FROM
-            msg["To"] = to_email
+            msg["To"] = actual_to
 
             with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
                 server.starttls()
                 server.login(settings.SMTP_USER, settings.SMTP_PASS)
-                server.sendmail(settings.SMTP_FROM, [to_email], msg.as_string())
+                server.sendmail(settings.SMTP_FROM, [actual_to], msg.as_string())
             return True
         except Exception as e:
             logger.warning(f"SMTP send failed ({e}); falling back to console output.")
