@@ -1,4 +1,5 @@
 import json
+import requests
 from typing import List, Dict, Optional
 from app.config import settings
 
@@ -8,17 +9,29 @@ try:
 except ImportError:
     _openai_client = None
 
-try:
-    import google.generativeai as genai
-    if settings.GEMINI_API_KEY:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-    _gemini_available = bool(settings.GEMINI_API_KEY)
-except ImportError:
-    _gemini_available = False
+_gemini_available = bool(settings.GEMINI_API_KEY)
+
+_GEMINI_MODEL = "gemini-2.0-flash"
+_GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_MODEL}:generateContent"
+
+
+def _call_gemini(prompt: str, max_tokens: int = 500) -> str:
+    resp = requests.post(
+        _GEMINI_URL,
+        params={"key": settings.GEMINI_API_KEY},
+        json={
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": max_tokens},
+        },
+        timeout=30,
+    )
+    if resp.status_code != 200:
+        raise Exception(f"{resp.status_code}: {resp.text[:300]}")
+    data = resp.json()
+    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 
 def _pick_provider(preference: str = "auto") -> Optional[str]:
-    """Resolves a user's model preference to an actually-available provider."""
     if preference == "openai" and _openai_client:
         return "openai"
     if preference == "gemini" and _gemini_available:
@@ -29,6 +42,8 @@ def _pick_provider(preference: str = "auto") -> Optional[str]:
         if _gemini_available:
             return "gemini"
     return None
+
+
 def generate_answer(question: str, sources: List[Dict], model_pref: str = "auto") -> str:
     provider = _pick_provider(model_pref)
 
@@ -77,15 +92,15 @@ def generate_answer(question: str, sources: List[Dict], model_pref: str = "auto"
 
     if provider == "gemini":
         try:
-            model = genai.GenerativeModel("gemini-flash-latest")
-            resp = model.generate_content(f"{system_prompt}\n\n{user_content}")
-            return resp.text.strip()
+            return _call_gemini(f"{system_prompt}\n\n{user_content}", max_tokens=500)
         except Exception as e:
             if sources:
                 return f"(Gemini call failed, showing best-matching excerpt instead: {e})\n\n{sources[0]['snippet']}"
             return f"(Gemini call failed: {e})"
 
     return "Something went wrong generating a response. Please try again."
+
+
 def llm_summarize(text: str, model_pref: str = "auto") -> Optional[str]:
     provider = _pick_provider(model_pref)
     prompt = f"Summarize the following document in 4-6 clear sentences:\n\n{text[:6000]}"
@@ -103,9 +118,7 @@ def llm_summarize(text: str, model_pref: str = "auto") -> Optional[str]:
 
     if provider == "gemini":
         try:
-            model = genai.GenerativeModel("gemini-flash-latest")
-            resp = model.generate_content(prompt)
-            return resp.text.strip()
+            return _call_gemini(prompt, max_tokens=300)
         except Exception:
             return None
 
@@ -134,9 +147,7 @@ def llm_generate_quiz(text: str, num_questions: int, model_pref: str = "auto") -
             return None
     elif provider == "gemini":
         try:
-            model = genai.GenerativeModel("gemini-flash-latest")
-            resp = model.generate_content(prompt)
-            raw = resp.text.strip()
+            raw = _call_gemini(prompt, max_tokens=800)
         except Exception:
             return None
     else:
