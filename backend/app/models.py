@@ -35,7 +35,11 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
 
     documents = relationship("Document", back_populates="uploader")
-    chat_sessions = relationship("ChatSession", back_populates="user")
+    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
+    otp_verifications = relationship("OtpVerification", cascade="all, delete-orphan")
+    activity_logs = relationship("ActivityLog", cascade="all, delete-orphan")
+    feedback_entries = relationship("Feedback", cascade="all, delete-orphan")
+    notifications = relationship("Notification", cascade="all, delete-orphan")
 
 
 class Category(Base):

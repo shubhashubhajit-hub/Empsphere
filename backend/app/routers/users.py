@@ -129,6 +129,14 @@ def delete_user(user_id: str, db: Session = Depends(get_db), admin: models.User 
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    doc_count = db.query(models.Document).filter(models.Document.uploaded_by == user.id).count()
+    if doc_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Can't delete this user — they've uploaded {doc_count} document(s), which would be lost. Use 'Block' instead to revoke their access without deleting their contributions.",
+        )
+
     db.delete(user)
     db.commit()
     log_activity(db, admin.id, "user_deleted", {"target_user": user.email})

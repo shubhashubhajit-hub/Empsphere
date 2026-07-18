@@ -19,10 +19,9 @@ from app.services.notification_service import create_notification
 from app.services.activity_service import log_activity
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
+
+
 def _can_modify_document(current_user: models.User, doc: models.Document, db: Session) -> bool:
-    """Admins can always modify; the original uploader can always modify their
-    own file; a Manager can modify a file if the person who uploaded it is in
-    the Manager's own department."""
     if current_user.role == models.RoleEnum.admin:
         return True
     if doc.uploaded_by == current_user.id:
@@ -226,7 +225,6 @@ _FILE_MEDIA_TYPES = {
 
 @router.get("/{doc_id}/file")
 def view_document_file(doc_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Streams the original uploaded file so it can be opened/previewed/downloaded."""
     doc = db.query(models.Document).filter(models.Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -246,8 +244,6 @@ async def replace_document_file(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """Uploads a new version of an existing document, archiving the old file/text
-    into document_versions so previous versions can still be viewed or restored."""
     doc = db.query(models.Document).filter(models.Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")

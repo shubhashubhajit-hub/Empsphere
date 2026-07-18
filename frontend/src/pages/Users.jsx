@@ -33,8 +33,12 @@ export default function Users() {
 
   async function removeUser(u) {
     if (!confirm(`Delete ${u.name}?`)) return
-    await client.delete(`/users/${u.id}`)
-    load()
+    try {
+      await client.delete(`/users/${u.id}`)
+      load()
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not delete this user')
+    }
   }
 
   return (
