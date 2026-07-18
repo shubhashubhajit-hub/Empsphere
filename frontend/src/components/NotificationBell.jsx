@@ -56,7 +56,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-8 w-72 bg-panel border border-panelLine rounded-xl p-2 shadow-xl z-50 max-h-80 overflow-y-auto">
+        <div className="absolute left-0 top-8 w-60 max-w-[85vw] bg-panel border border-panelLine rounded-xl p-2 shadow-xl z-50 max-h-72 overflow-y-auto overflow-x-hidden">
           {notifications.length === 0 && <div className="text-xs text-slate-500 p-3">No notifications yet.</div>}
           {notifications.map((n) => (
             <div

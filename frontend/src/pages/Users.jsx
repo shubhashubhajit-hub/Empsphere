@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 export default function Users() {
   const [users, setUsers] = useState([])
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
@@ -41,11 +42,32 @@ export default function Users() {
     }
   }
 
+  const visibleUsers = users
+    .filter((u) => {
+      const q = search.trim().toLowerCase()
+      if (!q) return true
+      return (
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.department || '').toLowerCase().includes(q) ||
+        u.role.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+
   return (
     <div className="flex">
       <Navbar />
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-semibold mb-5" style={{ fontFamily: 'Georgia, serif' }}>User Management</h1>
+        <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
+          <h1 className="text-2xl font-semibold" style={{ fontFamily: 'Georgia, serif' }}>User Management</h1>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, email, department, role…"
+            className="bg-panel border border-panelLine rounded-lg px-3 py-2 text-sm outline-none focus:border-gold w-72"
+          />
+        </div>
         {error && <div className="text-red-400 text-sm mb-3">{error}</div>}
 
         <div className="bg-panel border border-panelLine rounded-xl overflow-hidden">
@@ -56,7 +78,7 @@ export default function Users() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {visibleUsers.map((u) => (
                 <tr key={u.id} className="border-b border-panelLine last:border-0">
                   <td className="p-3">{u.name}</td>
                   <td className="p-3 text-slate-400">{u.email}</td>
@@ -90,6 +112,9 @@ export default function Users() {
                   )}
                 </tr>
               ))}
+              {visibleUsers.length === 0 && (
+                <tr><td colSpan={isAdmin ? 6 : 5} className="p-6 text-center text-slate-500">No users match your search.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
